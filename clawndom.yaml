@@ -1,0 +1,51 @@
+# Clawndom agent config.
+#
+# Each top-level key under `routing` is a provider name that matches a
+# `name` in Clawndom's PROVIDERS_CONFIG. Rules inside are evaluated in
+# order; the first matching rule wins. Walk continues across agents in
+# Clawndom's AGENTS_CONFIG until a rule matches — first match across any
+# agent wins.
+#
+# `condition` uses Clawndom's Condition AST:
+#   leaves     — equals, in, matches, exists
+#   composites — all_of, any_of, not  (arbitrarily nestable)
+#
+# `messageTemplate` is a path relative to this agent's directory. Inside
+# a template you can inline policy documents with {{doc:docs/foo.md}},
+# also relative to this directory.
+
+routing:
+  jira:
+    rules:
+      - name: bug-in-planning
+        condition:
+          all_of:
+            - equals:
+                field: issue.fields.issuetype.name
+                value: Bug
+            - in:
+                field: issue.fields.status.name
+                values:
+                  - Plan
+                  - Planning
+        messageTemplate: templates/bug-plan.md
+
+      - name: story-ready
+        condition:
+          all_of:
+            - equals:
+                field: issue.fields.issuetype.name
+                value: Story
+            - equals:
+                field: issue.fields.status.name
+                value: Ready for Development
+        messageTemplate: templates/story-ready.md
+
+# Optional: model selection per provider. First matching rule wins.
+# Omit this block if you want Clawndom's runner default.
+#
+# modelRules:
+#   jira:
+#     - field: issue.fields.priority.name
+#       matches: ['Highest', 'High']
+#       model: claude-opus-4-6
